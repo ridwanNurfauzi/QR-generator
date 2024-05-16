@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator</title>
+
+
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.11.0/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com/3.4.3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.11.0/dist/sweetalert2.all.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="min-h-screen w-full flex flex-col">
+            <div class="flex-1 sm:my-12 flex flex-col bg-cover bg-center">
+                <div
+                    class="m-0 my-auto sm:mx-auto sm:w-[540px] flex-grow sm:flex-grow-0 flex flex-col bg-gray-50 bg-opacity-[.65] p-8 sm:rounded-xl shadow-lg backdrop-blur-sm">
+                    <div class="flex flex-col my-auto">
+                        <div class="mb-4">
+                            <h1 class="text-center font-semibold text-xl">QR Generator</h1>
+                        </div>
+                        <div class="mb-4">
+                            <label for="title" class="block mb-2 text-sm font-medium text-gray-900"
+                                title="Judul untuk nama file">
+                                Judul
+                            </label>
+                            <input type="text" id="title"
+                                class="bg-gray-50 border outline-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                                placeholder="Masukkan judul . . ." />
+                        </div>
+                        <div class="mb-4">
+                            <label for="inp_data" class="block mb-2 text-sm font-medium text-gray-900">
+                                Link/teks
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="inp_data"
+                                    class="block w-full p-4 pe-20 text-sm outline-none text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Masukkan link atau teks . . ." />
+                                <button onclick="generate()"
+                                    class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2">
+                                    Buat
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="size" class="block mb-2 text-sm font-medium text-gray-900">
+                                Ukuran
+                            </label>
+                            <select id="size" onchange="changeSize()"
+                                class="bg-gray-50 outline-none border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option value="100x100">100x100</option>
+                                <option value="200x200">200x200</option>
+                                <option value="300x300">300x300</option>
+                                <option value="400x400">400x400</option>
+                                <option value="500x500">500x500</option>
+                                <option value="600x600">600x600</option>
+                                <option value="700x700">700x700</option>
+                                <option value="800x800">800x800</option>
+                                <option value="900x900">900x900</option>
+                                <option value="1000x1000">1000x1000</option>
+                            </select>
+
+                        </div>
+                        <div class="mb-4">
+                            <div class="mx-8 flex justify-center" id="qr_view"></div>
+                        </div>
+                        <div class="mb-4 flex justify-end">
+                            <button type="button" onclick="download()"
+                                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2">
+                                Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="min-h-screen w-full flex flex-col bg-white fixed top-0 left-0 bg-opacity-70" id="loading_panel">
+            <span
+                class="animate-spin p-8 m-auto border-t-8 border-b-8 border-l-8 border-r-8 border-b-blue-600 rounded-full"></span>
+        </div>
+    </div>
+
+    <script>
+        let qrUrl = '';
+
+        async function generate() {
+            const data = $('#inp_data')[0].value;
+            const size = $('#size')[0].value;
+            if (!!data) {
+                $('#loading_panel').removeClass('hidden');
+                const url = new URL('https://api.qrserver.com/v1/create-qr-code/');
+                url.searchParams.append('size', size);
+                url.searchParams.append('data', data);
+                await fetch(url.toString())
+                    .then(x => x.blob())
+                    .then(y => {
+                        const blob = window.URL.createObjectURL(new Blob([y], {
+                            type: 'image/png'
+                        }));
+                        $('#qr_view')[0].innerHTML = `<img src="${blob.toString()}" alt="Gambar">`;
+                        qrUrl = url.toString();
+                    })
+                    .catch(async e => {
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Mohon maaf',
+                            text: 'Terjadi kesalahan.'
+                        });
+                        $('#loading_panel').addClass('hidden');
+                    })
+                    .finally(() => {
+                        $('#loading_panel').addClass('hidden');
+                    })
+            }
+            else
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Mohon maaf',
+                    text: 'Link / teks tidak dapat dikosongkan.'
+                });
+        }
+
+        async function changeSize() {
+            const data = $('#inp_data')[0].value;
+            const size = $('#size')[0].value;
+            if (!!qrUrl) {
+                $('#loading_panel').removeClass('hidden');
+                const url = new URL('https://api.qrserver.com/v1/create-qr-code/');
+                url.searchParams.append('size', size);
+                url.searchParams.append('data', data);
+                await fetch(url.toString())
+                    .then(x => x.blob())
+                    .then(y => {
+                        const blob = window.URL.createObjectURL(new Blob([y], {
+                            type: 'image/png'
+                        }));
+                        $('#qr_view')[0].innerHTML = `<img src="${blob.toString()}" alt="Gambar">`;
+                        qrUrl = url.toString();
+                    })
+                    .catch(async e => {
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Mohon maaf',
+                            text: 'Terjadi kesalahan.'
+                        });
+                        $('#loading_panel').addClass('hidden');
+                    })
+                    .finally(() => {
+                        $('#loading_panel').addClass('hidden');
+                    })
+            }
+        }
+
+        async function download() {
+            if (!!qrUrl) {
+                $('#loading_panel').removeClass('hidden');
+                await fetch(qrUrl)
+                    .then(x => x.blob())
+                    .then(data => {
+                        const link = document.createElement('a');
+                        const time = (new Date()).getTime().toString(16);
+
+                        let fileName = '';
+                        if (!!$('#title')[0].value)
+                            fileName = $('#title')[0].value;
+                        else
+                            fileName = `qr_img-${time}.png`;
+
+                        link.setAttribute("href", window.URL.createObjectURL(new Blob([data], {
+                            type: 'image/png'
+                        })));
+                        link.setAttribute('download', fileName);
+                        link.click();
+                        link.remove();
+                    })
+                    .catch(async e => {
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Mohon maaf',
+                            text: 'Terjadi kesalahan.'
+                        });
+                        $('#loading_panel').addClass('hidden');
+                    })
+                    .finally(() => {
+                        $('#loading_panel').addClass('hidden');
+                    });
+            } else
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Mohon maaf',
+                    text: "Tolong klik tombol 'Buat' terlebih dahulu."
+                });
+        }
+
+
+        $(function () {
+            $('#loading_panel').addClass('hidden');
+        });
+    </script>
+</body>
+
+</html>
